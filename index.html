@@ -933,20 +933,55 @@
                 return getCookieConsent() !== CONSENT_ALL;
             }
 
+            // Store original content for restoration
+            function storeOriginalContent() {
+                const blockedElements = document.querySelectorAll('[data-cookie-required="all"]');
+                blockedElements.forEach(element => {
+                    if (!element.dataset.originalContent && !element.classList.contains('cookie-blocked')) {
+                        element.dataset.originalContent = element.innerHTML;
+                    }
+                });
+            }
+
             // Apply content blocking
             function applyContentBlocking() {
+                const blockedElements = document.querySelectorAll('[data-cookie-required="all"]');
+                
                 if (shouldBlockContent()) {
-                    const blockedElements = document.querySelectorAll('[data-cookie-required="all"]');
+                    // Block content if only necessary cookies accepted
                     const template = document.getElementById('blockedContentTemplate');
 
                     if (template) {
                         blockedElements.forEach(element => {
-                            const clone = template.content.cloneNode(true);
-                            element.innerHTML = '';
-                            element.appendChild(clone);
-                            element.classList.add('cookie-blocked');
+                            // Only block if not already blocked
+                            if (!element.classList.contains('cookie-blocked')) {
+                                // Store original content if not already stored
+                                if (!element.dataset.originalContent) {
+                                    element.dataset.originalContent = element.innerHTML;
+                                }
+                                const clone = template.content.cloneNode(true);
+                                element.innerHTML = '';
+                                element.appendChild(clone);
+                                element.classList.add('cookie-blocked');
+                            }
                         });
                     }
+                } else {
+                    // Unblock content if all cookies accepted
+                    blockedElements.forEach(element => {
+                        if (element.classList.contains('cookie-blocked')) {
+                            // Restore original content
+                            if (element.dataset.originalContent) {
+                                element.innerHTML = element.dataset.originalContent;
+                                element.classList.remove('cookie-blocked');
+                            } else {
+                                // Fallback: restore default map placeholder
+                                const mapPlaceholder = '<div class="map-placeholder"><div><svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 16px; display: block; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" fill="none"/></svg><div>Google Maps</div></div></div>';
+                                element.innerHTML = mapPlaceholder;
+                                element.classList.remove('cookie-blocked');
+                            }
+                        }
+                    });
                 }
             }
 
@@ -963,6 +998,9 @@
                 // Always show cookie icon, don't auto-show modal
                 // User must click icon to open/close
                 hideModal();
+
+                // Store original content before any blocking
+                storeOriginalContent();
 
                 // Apply content blocking
                 applyContentBlocking();
