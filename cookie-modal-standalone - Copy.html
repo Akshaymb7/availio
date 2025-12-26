@@ -605,16 +605,9 @@
                 height: 32px;
             }
 
-            .cookie-modal-overlay {
-                bottom: 20px;
-                right: 20px;
-                left: 20px;
-            }
-
             .cookie-modal {
                 padding: 24px;
                 max-width: 100%;
-                margin-bottom: 76px;
             }
 
             .cookie-modal-content {
@@ -988,7 +981,14 @@
                     cookiePolicyLink.addEventListener('click', handleCookiePolicyClick);
                 }
 
-                // Don't close on overlay click since it's positioned at bottom-right
+                // Close modal on overlay click
+                if (cookieModal) {
+                    cookieModal.addEventListener('click', function (e) {
+                        if (e.target === cookieModal) {
+                            handleCloseModal();
+                        }
+                    });
+                }
 
                 // Log status
                 const consent = getCookieConsent();

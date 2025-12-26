@@ -361,20 +361,18 @@
         /* Modal Overlay */
         .cookie-modal-overlay {
             position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
+            bottom: 24px;
+            right: 24px;
             z-index: 10000;
             display: none;
             opacity: 0;
             transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
         .cookie-modal-overlay.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            display: block;
+            pointer-events: auto;
         }
 
         .cookie-modal-overlay.visible {
@@ -390,14 +388,15 @@
             max-width: 480px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             position: relative;
-            transform: scale(0.8);
+            transform: scale(0.8) translateY(20px);
             opacity: 0;
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: bottom right;
+            margin-bottom: 80px;
         }
 
         .cookie-modal-overlay.visible .cookie-modal {
-            transform: scale(1);
+            transform: scale(1) translateY(0);
             opacity: 1;
         }
 
@@ -606,9 +605,16 @@
                 height: 32px;
             }
 
+            .cookie-modal-overlay {
+                bottom: 20px;
+                right: 20px;
+                left: 20px;
+            }
+
             .cookie-modal {
                 padding: 24px;
                 max-width: 100%;
+                margin-bottom: 76px;
             }
 
             .cookie-modal-content {
@@ -742,7 +748,7 @@
     </footer>
 
     <!-- Floating Cookie Icon -->
-    <button id="cookieIconBtn" class="cookie-floating-icon" aria-label="Cookie Settings" style="display: none;">
+    <button id="cookieIconBtn" class="cookie-floating-icon" aria-label="Cookie Settings">
         <svg class="cookie-icon-small" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="38" fill="#D4A574" />
             <circle cx="50" cy="50" r="38" fill="url(#cookieGradientSmall)" />
@@ -884,23 +890,9 @@
                 }
             }
 
-            // Show cookie icon
-            function showCookieIcon() {
-                if (cookieIconBtn) {
-                    cookieIconBtn.style.display = 'flex';
-                }
-            }
-
-            // Hide cookie icon
-            function hideCookieIcon() {
-                if (cookieIconBtn) {
-                    cookieIconBtn.style.display = 'none';
-                }
-            }
-
             // Toggle modal
             function toggleModal() {
-                if (cookieModal.classList.contains('visible')) {
+                if (cookieModal && cookieModal.classList.contains('visible')) {
                     hideModal();
                 } else {
                     showModal();
@@ -912,10 +904,8 @@
                 setCookieConsent(CONSENT_ALL);
                 console.log('All cookies accepted');
                 hideModal();
-                setTimeout(() => {
-                    showCookieIcon();
-                    window.location.reload();
-                }, 350);
+                // Apply content blocking immediately without reload
+                applyContentBlocking();
             }
 
             // Handle Accept Necessary
@@ -923,18 +913,13 @@
                 setCookieConsent(CONSENT_NECESSARY);
                 console.log('Only necessary cookies accepted');
                 hideModal();
-                setTimeout(() => {
-                    showCookieIcon();
-                    window.location.reload();
-                }, 350);
+                // Apply content blocking immediately without reload
+                applyContentBlocking();
             }
 
             // Handle close
             function handleCloseModal() {
                 hideModal();
-                if (!isFirstVisit()) {
-                    showCookieIcon();
-                }
             }
 
             // Handle cookie policy click
@@ -975,14 +960,9 @@
                 acceptNecessaryBtn = document.getElementById('acceptNecessaryBtn');
                 cookiePolicyLink = document.getElementById('cookiePolicyLink');
 
-                // Check first visit
-                if (isFirstVisit()) {
-                    showModal();
-                    hideCookieIcon();
-                } else {
-                    hideModal();
-                    showCookieIcon();
-                }
+                // Always show cookie icon, don't auto-show modal
+                // User must click icon to open/close
+                hideModal();
 
                 // Apply content blocking
                 applyContentBlocking();
@@ -1008,14 +988,7 @@
                     cookiePolicyLink.addEventListener('click', handleCookiePolicyClick);
                 }
 
-                // Close modal on overlay click
-                if (cookieModal) {
-                    cookieModal.addEventListener('click', function (e) {
-                        if (e.target === cookieModal) {
-                            handleCloseModal();
-                        }
-                    });
-                }
+                // Don't close on overlay click since it's positioned at bottom-right
 
                 // Log status
                 const consent = getCookieConsent();
